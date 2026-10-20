@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#79d7ff">
+<title>سباق الحركات</title>
+<style>
+* { box-sizing: border-box; }
+body { margin:0; font-family:Tahoma,Arial,sans-serif; background:#79d7ff; color:#17324d; overflow:hidden; touch-action:manipulation; user-select:none; }
+button { font:inherit; cursor:pointer; }
+#game { position:relative; width:100%; height:100dvh; min-height:480px; overflow:hidden; background:linear-gradient(#73d7ff 0%,#d7f6ff 49%,#8edb72 50%,#4aab49 100%); }
+.hud { position:absolute; z-index:5; top:10px; right:10px; left:10px; display:flex; justify-content:space-between; gap:8px; align-items:center; }
+.pill { background:#fff; border:2px solid #fff; border-radius:18px; padding:9px 13px; box-shadow:0 3px 0 #c1e6f4; font-weight:bold; font-size:14px; }
+#road { position:absolute; width:76%; height:115%; left:12%; top:12%; background:#565e6a; clip-path:polygon(39% 0,61% 0,100% 100%,0 100%); }
+#roadLines { position:absolute; inset:0; overflow:hidden; clip-path:polygon(39% 0,61% 0,100% 100%,0 100%); }
+.laneLine { position:absolute; top:-100%; height:220%; width:5px; left:50%; background:repeating-linear-gradient(to bottom,#fff 0 35px,transparent 35px 65px); transform:translateX(-50%); animation:roadMove .55s linear infinite; }
+@keyframes roadMove { from { background-position-y:0; } to { background-position-y:65px; } }
+.ground { position:absolute; top:48%; bottom:0; left:0; right:0; background:linear-gradient(#8bd96b,#40a84a); }
+.scenery { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+.tree { position:absolute; font-size:clamp(25px,5vw,55px); animation:treeMove 3s linear infinite; }
+@keyframes treeMove { from { transform:translateY(-100px); } to { transform:translateY(110vh); } }
+#gateArea { position:absolute; inset:0; z-index:2; pointer-events:none; }
+.gate { position:absolute; top:27%; width:27%; height:18%; min-height:85px; border:5px solid #fff; border-radius:12px 12px 4px 4px; box-shadow:0 0 0 3px #263d50,0 8px 0 #303a46; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#15283d; font-size:clamp(27px,7vw,49px); font-weight:900; text-shadow:0 2px #fff; transition:opacity .2s; }
+.gate small { font-size:12px; margin-top:3px; }
+.gate:nth-child(1) { background:#ffe66d; }
+.gate:nth-child(2) { background:#a4f2ad; }
+.gate:nth-child(3) { background:#ffb8cd; }
+#car { position:absolute; z-index:4; bottom:14%; left:50%; width:83px; height:116px; transform:translateX(-50%); transition:left .13s ease-out; }
+.carBody { position:absolute; bottom:4px; left:7px; width:69px; height:98px; border-radius:23px 23px 15px 15px; background:linear-gradient(90deg,#c51d2d,#ff4550 45%,#b80e24); border:3px solid #a51527; box-shadow:inset 0 0 0 2px #ff8990,0 8px 0 #303d49; }
+.carGlass { position:absolute; top:20px; left:11px; width:41px; height:25px; background:#b9efff; border:3px solid #76212b; border-radius:9px; }
+.carBonnet { position:absolute; bottom:14px; left:12px; width:39px; height:25px; background:#ef3444; border-radius:8px; border-top:3px solid #ff8990; }
+.wheel { position:absolute; width:10px; height:28px; background:#202630; border-radius:4px; }
+.w1 { left:0; top:29px; } .w2 { right:0; top:29px; } .w3 { left:0; bottom:12px; } .w4 { right:0; bottom:12px; }
+.light { position:absolute; bottom:5px; width:13px; height:8px; background:#fff2a6; border-radius:3px; }
+.l1 { left:7px; } .l2 { right:7px; }
+#question { position:absolute; z-index:6; top:76px; left:50%; transform:translateX(-50%); width:min(90%,370px); padding:12px 15px; text-align:center; background:#fff; border-radius:20px; box-shadow:0 5px 0 #b5dce9; }
+#question h2 { margin:0 0 5px; font-size:17px; }
+#prompt { font-size:27px; color:#e0443e; font-weight:900; }
+#speaker { border:0; background:#e8f7ff; border-radius:12px; padding:7px 13px; margin-top:7px; font-weight:bold; }
+#feedback { position:absolute; z-index:7; top:37%; left:50%; transform:translateX(-50%); font-size:22px; font-weight:900; text-align:center; width:90%; color:white; text-shadow:0 2px 5px #19384a; pointer-events:none; }
+#controls { position:absolute; z-index:8; bottom:16px; left:0; right:0; display:flex; justify-content:space-between; padding:0 22px; align-items:center; }
+.control { width:70px; height:65px; border:0; border-radius:22px; background:#fff; color:#19364f; font-size:30px; font-weight:bold; box-shadow:0 6px 0 #b3d2df; touch-action:manipulation; }
+.control:active { transform:translateY(4px); box-shadow:0 2px 0 #b3d2df; }
+#startScreen { position:absolute; z-index:20; inset:0; display:flex; align-items:center; justify-content:center; padding:20px; background:#16334bdc; }
+.panel { background:white; border-radius:28px; padding:27px 22px; text-align:center; width:min(100%,380px); box-shadow:0 8px 0 #aacbda; }
+.panel h1 { font-size:29px; margin:0 0 10px; color:#e63d46; }
+.panel p { line-height:1.8; }
+.mainBtn { border:0; border-radius:16px; padding:13px 24px; color:white; background:#21ae69; font-size:18px; font-weight:bold; box-shadow:0 5px 0 #147b4a; }
+#status { font-size:13px; color:#476175; margin-top:12px; }
+@media (max-height:600px) { #question { top:60px; padding:7px; } #car { bottom:12%; transform:translateX(-50%) scale(.78); } .gate { top:27%; height:17%; } #controls { bottom:8px; } .control { height:53px; } }
+</style>
+</head>
+<body>
+<div id="game">
+  <div class="ground"></div>
+  <div class="scenery" id="scenery"></div>
+  <div id="road"><div id="roadLines"><div class="laneLine"></div></div></div>
+  <div class="hud">
+    <div class="pill">⭐ النقاط: <span id="score">0</span></div>
+    <div class="pill">🏁 الجولة: <span id="round">1</span></div>
+  </div>
+  <div id="question">
+    <h2>استمع واختر البوابة الصحيحة</h2>
+    <div id="prompt">بَ</div>
+    <button id="speaker" type="button">🔊 اسمع مرة أخرى</button>
+  </div>
+  <div id="gateArea">
+    <div class="gate" id="gate0"><span>بَ</span><small>اخترني</small></div>
+    <div class="gate" id="gate1"><span>بُ</span><small>اخترني</small></div>
+    <div class="gate" id="gate2"><span>بِ</span><small>اخترني</small></div>
+  </div>
+  <div id="feedback"></div>
+  <div id="car">
+    <div class="carBody">
+      <div class="carGlass"></div><div class="carBonnet"></div>
+      <div class="wheel w1"></div><div class="wheel w2"></div><div class="wheel w3"></div><div class="wheel w4"></div>
+      <div class="light l1"></div><div class="light l2"></div>
+    </div>
+  </div>
+  <div id="controls">
+    <button class="control" id="right" type="button" aria-label="تحرك للمسار الأيمن">◀</button>
+    <button class="control" id="left" type="button" aria-label="تحرك للمسار الأيسر">▶</button>
+  </div>
+  <div id="startScreen">
+    <div class="panel">
+      <h1>🏎️ سباق الحركات</h1>
+      <p>استمع إلى الحركة، ووجّه سيارتك إلى البوابة الصحيحة!</p>
+      <p>َ فتحة · ُ ضمة · ِ كسرة</p>
+      <button class="mainBtn" id="startBtn" type="button">ابدأ السباق 🚦</button>
+      <div id="status">اللعبة جاهزة</div>
+    </div>
+  </div>
+</div>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const $ = id => document.getElementById(id);
+  const questions = [
+    { text:"بَ", sound:"بَ", name:"فتحة" },
+    { text:"بُ", sound:"بُ", name:"ضمة" },
+    { text:"بِ", sound:"بِ", name:"كسرة" },
+    { text:"بَا", sound:"بَا", name:"فتحة وصوت طويل" },
+    { text:"بُو", sound:"بُو", name:"ضمة وصوت طويل" },
+    { text:"بِي", sound:"بِي", name:"كسرة وصوت طويل" },
+    { text:"مَ", sound:"مَ", name:"فتحة" },
+    { text:"مُ", sound:"مُ", name:"ضمة" },
+    { text:"مِ", sound:"مِ", name:"كسرة" }
+  ];
+  let current = null, options = [], correctIndex = 0;
+  let lane = 1, score = 0, round = 1, running = false, busy = false, speechVoice = null;
+  let touchStartX = null, answerTimer = null, gateTimer = null;
+
+  function pickVoice() {
+    if (!("speechSynthesis" in window)) return;
+    const voices = window.speechSynthesis.getVoices();
+    speechVoice = voices.find(v => v.lang && v.lang.toLowerCase().startsWith("ar")) || null;
+  }
+  if ("speechSynthesis" in window) {
+    pickVoice();
+    window.speechSynthesis.onvoiceschanged = pickVoice;
+  }
+
+  function speak(text) {
+    if (!("speechSynthesis" in window)) {
+      $("status").textContent = "النطق غير مدعوم في هذا المتصفح.";
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = speechVoice ? speechVoice.lang : "ar-SA";
+    if (speechVoice) utterance.voice = speechVoice;
+    utterance.rate = 0.72;
+    utterance.pitch = 1.05;
+    window.speechSynthesis.speak(utterance);
+  }
+  function speakPrompt() {
+    if (current) speak("اختر " + current.name + ". " + current.sound);
+  }
+  function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
+  function updateCar() {
+    const positions = [35, 50, 65];
+    $("car").style.left = positions[lane] + "%";
+  }
+  function newQuestion() {
+    if (answerTimer) clearTimeout(answerTimer);
+    if (gateTimer) clearTimeout(gateTimer);
+    current = questions[Math.floor(Math.random() * questions.length)];
+    const distractors = shuffle(questions.filter(q => q.text !== current.text).slice());
+    options = shuffle([current, ...distractors.slice(0, 2)]);
+    correctIndex = options.findIndex(q => q.text === current.text);
+    options.forEach((q, i) => {
+      $("gate" + i).querySelector("span").textContent = q.text;
+      $("gate" + i).querySelector("small").textContent = q.name;
+    });
+    $("prompt").textContent = current.text;
+    $("round").textContent = round;
+    $("feedback").textContent = "";
+    lane = 1;
+    updateCar();
+    $("gateArea").style.opacity = "1";
+    document.querySelectorAll(".gate").forEach((gate, i) => {
+      gate.style.transition = "none";
+      gate.style.left = (7 + i * 30) + "%";
+      gate.style.top = "27%";
+      gate.style.transform = "scale(.6)";
+    });
+    gateTimer = setTimeout(() => {
+      if (!running) return;
+      document.querySelectorAll(".gate").forEach(gate => {
+        gate.style.transition = "top 2.5s linear, transform 2.5s linear";
+        gate.style.top = "60%";
+        gate.style.transform = "scale(1.25)";
+      });
+    }, 30);
+    setTimeout(() => { if (running && !busy) speakPrompt(); }, 400);
+  }
+  function move(direction) {
+    if (!running || busy) return;
+    lane = Math.max(0, Math.min(2, lane + direction));
+    updateCar();
+  }
+  function checkAnswer() {
+    if (!running || busy) return;
+    busy = true;
+    const feedback = $("feedback");
+    if (lane === correctIndex) {
+      score += 10;
+      feedback.textContent = "أحسنت! إجابة صحيحة ⭐";
+      feedback.style.color = "#d7ff9e";
+    } else {
+      feedback.textContent = "حاول مرة أخرى! الإجابة " + current.text;
+      feedback.style.color = "#fff";
+      speak("الإجابة الصحيحة " + current.sound);
+    }
+    $("score").textContent = score;
+    answerTimer = setTimeout(() => {
+      if (!running) return;
+      round++;
+      busy = false;
+      newQuestion();
+    }, 1800);
+  }
+  function createScenery() {
+    const scenery = $("scenery");
+    if (!scenery || scenery.childElementCount) return;
+    for (let i = 0; i < 12; i++) {
+      const tree = document.createElement("div");
+      tree.className = "tree";
+      tree.textContent = i % 2 ? "🌳" : "🌲";
+      tree.style.left = i % 2 ? "2%" : "84%";
+      tree.style.top = (i * 9) + "%";
+      tree.style.animationDelay = (-i * .5) + "s";
+      tree.style.animationDuration = (2.5 + (i % 3)) + "s";
+      scenery.appendChild(tree);
+    }
+  }
+  function startGame() {
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    score = 0; round = 1; lane = 1; busy = false; running = true;
+    $("score").textContent = "0";
+    $("round").textContent = "1";
+    $("startScreen").style.display = "none";
+    $("status").textContent = "اللعبة تعمل";
+    newQuestion();
+  }
+  const leftButton = $("left");
+  const rightButton = $("right");
+  const startButton = $("startBtn");
+  const speakerButton = $("speaker");
+  const game = $("game");
+
+  if (leftButton) leftButton.addEventListener("pointerdown", e => { e.preventDefault(); move(-1); });
+  if (rightButton) rightButton.addEventListener("pointerdown", e => { e.preventDefault(); move(1); });
+  if (startButton) startButton.addEventListener("click", startGame);
+  if (speakerButton) speakerButton.addEventListener("click", speakPrompt);
+
+  if (game) {
+    game.addEventListener("touchstart", e => {
+      if (e.target.closest("button") || !running) return;
+      touchStartX = e.changedTouches[0].clientX;
+    }, { passive:true });
+    game.addEventListener("touchend", e => {
+      if (touchStartX === null || !running) return;
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(dx) > 35) move(dx > 0 ? -1 : 1);
+      touchStartX = null;
+    }, { passive:true });
+  }
+  document.addEventListener("keydown", e => {
+    if (e.key === "ArrowLeft") move(-1);
+    if (e.key === "ArrowRight") move(1);
+    if (e.key === " " && !running) startGame();
+  });
+  setInterval(() => {
+    if (!running || busy) return;
+    const gates = document.querySelectorAll(".gate");
+    if (!gates.length) return;
+    const top = parseFloat(gates[0].style.top || "27%");
+    if (top >= 58) checkAnswer();
+  }, 100);
+  createScenery();
+});
+</script>
+</body>
+</html>
